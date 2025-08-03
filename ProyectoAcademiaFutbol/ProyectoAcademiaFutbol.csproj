@@ -145,6 +145,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utilidades\ExcelHelper.cs" />
     <EmbeddedResource Include="Formularios\FrmAgregarAlumno.resx">
       <DependentUpon>FrmAgregarAlumno.cs</DependentUpon>
     </EmbeddedResource>

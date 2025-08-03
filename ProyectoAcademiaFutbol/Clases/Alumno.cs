@@ -13,7 +13,7 @@ namespace ProyectoAcademiaFutbol.Clases
             get { return $"{Nombre} {Apellido}"; }
         }
         public string DNI { get; set; }
-        public string TipoDeSeguro { get; set; }
+        public string TipoSeguro { get; set; }
         public DateTime FechaNacimiento { get; set; }
         public string Categoria { get; set; }              // Categoría (ej: Sub-10, Sub-12)
         public bool Compite { get; set; }                  // ¿Compite en torneos?
@@ -54,7 +54,7 @@ namespace ProyectoAcademiaFutbol.Clases
             Nombre = nombre;
             Apellido = apellido;
             DNI = dni;
-            TipoDeSeguro = tipoSeguro;
+            TipoSeguro = tipoSeguro;
             FechaNacimiento = fechaNacimiento;
             Categoria = categoria;
             Compite = compite;

@@ -3,6 +3,14 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Ignorar archivos de la base de datos
+# Asegúrate de que los nombres de archivo coincidan con los de tu proyecto.
+*.db
+*.sqlite
+*.sqlite3
+# Si tu base de datos tiene un nombre específico:
+/academia.db
+
 # User-specific files
 *.rsuser
 *.suo

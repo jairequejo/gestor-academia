@@ -358,7 +358,7 @@
             this.btnEliminar.TabIndex = 5;
             this.btnEliminar.Text = "Eliminar";
             this.btnEliminar.UseVisualStyleBackColor = true;
-            this.btnEliminar.Click += new System.EventHandler(this.btnEliminar_Click);
+            this.btnEliminar.Click += new System.EventHandler(this.btnEliminar_Click_1);
             // 
             // groupBox2
             // 
@@ -657,7 +657,7 @@
             this.btnExporrtar.TabIndex = 20;
             this.btnExporrtar.Text = "Exportar";
             this.btnExporrtar.UseVisualStyleBackColor = true;
-            this.btnExporrtar.Click += new System.EventHandler(this.btnExporrtar_Click);
+            this.btnExporrtar.Click += new System.EventHandler(this.btnExporrtar_Click_1);
             // 
             // btnImportar
             // 
@@ -668,7 +668,7 @@
             this.btnImportar.TabIndex = 21;
             this.btnImportar.Text = "Importar";
             this.btnImportar.UseVisualStyleBackColor = true;
-            this.btnImportar.Click += new System.EventHandler(this.btnImportar_Click);
+            this.btnImportar.Click += new System.EventHandler(this.btnImportar_Click_1);
             // 
             // FrmAlumnos
             // 

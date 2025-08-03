@@ -1,16 +1,17 @@
-﻿using System;
-using ClosedXML.Excel;
-using System.IO;
-using System.Data;
-using System.Collections.Generic;
-using System.Windows.Forms;
+﻿using ClosedXML.Excel;
+using OfficeOpenXml;
 using ProyectoAcademiaFutbol.Clases;
 using ProyectoAcademiaFutbol.Datos;
 using ProyectoAcademiaFutbol.Formularios;
-using System.Text;
-using ExcelDataReader;
-using System.Data.OleDb;
+using ProyectoAcademiaFutbol.Utilidades;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Windows.Forms;
 
 namespace ProyectoAcademiaFutbol
 {
@@ -31,7 +32,7 @@ namespace ProyectoAcademiaFutbol
             colApoderado.DataPropertyName = nameof(Alumno.Apoderado);
             colCelularApoderado.DataPropertyName = nameof(Alumno.Celular);
             colCompite.DataPropertyName = nameof(Alumno.Compite);
-            colTipoSeguro.DataPropertyName = nameof(Alumno.TipoDeSeguro);
+            colTipoSeguro.DataPropertyName = nameof(Alumno.TipoSeguro);
             colCategoria.DataPropertyName = nameof(Alumno.Categoria);
             colEquipo.DataPropertyName = nameof(Alumno.Equipo);
             colMensualidad.DataPropertyName = nameof(Alumno.Mensualidad);
@@ -101,7 +102,7 @@ namespace ProyectoAcademiaFutbol
             if (string.IsNullOrEmpty(t))
                 CargarDatos();
             else
-                dgvAlumnos.DataSource = AlumnoDAO.BuscarPorNombreApellidoODNI(t); // ACTUALIZADO
+                dgvAlumnos.DataSource = AlumnoDAO.BuscarPorNombreApellidoODNI(t);
         }
 
         private void DgvAlumnos_SelectionChanged(object sender, EventArgs e)
@@ -114,7 +115,6 @@ namespace ProyectoAcademiaFutbol
 
             // Vista previa en labels (ajusta los nombres de los labels según tu formulario)
             lblNombre.Text = a.NombreCompleto;
-            lblDNI.Text = a.Apellido;
             lblDNI.Text = a.DNI;
             lblCategoria.Text = a.Categoria;
             lblSede.Text = a.Sede;
@@ -122,15 +122,8 @@ namespace ProyectoAcademiaFutbol
             lblGrupo.Text = a.Grupo;
             lblApoderado.Text = a.Apoderado;
             lblCelular.Text = a.Celular;
-            //lblTipoSeguro.Text = a.TipoDeSeguro;
-            //lblCompite.Text = a.Compite ? "Sí" : "No";
-            //lblEquipo.Text = a.Equipo;
-            //lblMensualidad.Text = a.Mensualidad.ToString("C2");
-            //lblFechaVencimiento.Text = a.FechaVencimiento.ToShortDateString();
-            //lblEstadoPago.Text = a.EstadoPago ? "Pagado" : "Pendiente";
             lblEdad.Text = a.Edad.ToString();
         }
-
 
         private void btnFiltrar_Click(object sender, EventArgs e)
         {
@@ -147,18 +140,6 @@ namespace ProyectoAcademiaFutbol
             dgvAlumnos.DataSource = list;
         }
 
-        private void btnEliminar_Click(object sender, EventArgs e)
-        {
-            if (dgvAlumnos.CurrentRow == null) return;
-            var alumno = (Alumno)dgvAlumnos.CurrentRow.DataBoundItem;
-            if (MessageBox.Show($"¿Eliminar a {alumno.Nombre} {alumno.Apellido}?", "Confirmar",
-                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-            {
-                AlumnoDAO.Eliminar(alumno.Id);
-                CargarDatos();
-            }
-        }
-
         private void btnEditar_Click(object sender, EventArgs e)
         {
             if (dgvAlumnos.CurrentRow == null) return;
@@ -170,100 +151,49 @@ namespace ProyectoAcademiaFutbol
                     CargarDatos();
             }
         }
-        private void ExportarDataGridViewAExcel(DataGridView dgv, string rutaArchivo)
+
+        private void btnEliminar_Click_1(object sender, EventArgs e)
         {
-            using (var wb = new XLWorkbook())
+            if (dgvAlumnos.CurrentRow == null) return;
+            var alumno = (Alumno)dgvAlumnos.CurrentRow.DataBoundItem;
+            if (MessageBox.Show($"¿Eliminar a {alumno.Nombre} {alumno.Apellido}?", "Confirmar",
+                                MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
-                var ws = wb.Worksheets.Add("Datos");
-
-                // Escribir encabezados
-                for (int i = 0; i < dgv.Columns.Count; i++)
-                {
-                    ws.Cell(1, i + 1).Value = dgv.Columns[i].HeaderText;
-                }
-
-                // Escribir filas
-                for (int i = 0; i < dgv.Rows.Count; i++)
-                {
-                    for (int j = 0; j < dgv.Columns.Count; j++)
-                    {
-                        var celda = dgv.Rows[i].Cells[j].Value;
-                        ws.Cell(i + 2, j + 1).Value = celda != null ? celda.ToString() : "";
-                    }
-                }
-
-                wb.SaveAs(rutaArchivo);
-                MessageBox.Show("Exportado correctamente a Excel.");
+                AlumnoDAO.Eliminar(alumno.Id);
+                CargarDatos();
             }
         }
 
-        private void btnExporrtar_Click(object sender, EventArgs e)
+        private void btnExporrtar_Click_1(object sender, EventArgs e)
         {
-            SaveFileDialog guardar = new SaveFileDialog();
-            guardar.Filter = "Archivo Excel|*.xlsx";
-            guardar.Title = "Guardar como Excel";
-            guardar.FileName = "DatosAcademia.xlsx";
-
-            if (guardar.ShowDialog() == DialogResult.OK)
+            using (SaveFileDialog sfd = new SaveFileDialog())
             {
-                ExportarDataGridViewAExcel(dgvAlumnos, guardar.FileName);
-            }
-        }
-        private List<Alumno> LeerAlumnosDesdeExcel(string ruta)
-        {
-            var alumnos = new List<Alumno>();
+                sfd.Filter = "Archivos de Excel (*.xlsx)|*.xlsx";
+                sfd.Title = "Guardar como Excel";
+                sfd.FileName = "Alumnos.xlsx";
 
-            using (var workbook = new XLWorkbook(ruta))
-            {
-                var hoja = workbook.Worksheet(1); // Puedes cambiar a nombre si es necesario
-                var rows = hoja.RangeUsed().RowsUsed().Skip(1); // Saltamos cabecera
-
-                foreach (var row in rows)
+                if (sfd.ShowDialog() == DialogResult.OK)
                 {
                     try
                     {
-                        var compiteTexto = row.Cell(10).GetValue<string>().Trim().ToLower();
-                        bool compite = compiteTexto == "sí" || compiteTexto == "si" || compiteTexto == "1" || compiteTexto == "true";
-
-                        var estadoPagoTexto = row.Cell(16).GetValue<string>().Trim().ToLower();
-                        bool estadoPago = estadoPagoTexto == "sí" || estadoPagoTexto == "si" || estadoPagoTexto == "pagado" || estadoPagoTexto == "1" || estadoPagoTexto == "true";
-
-                        var alumno = new Alumno
-                        {
-                            Nombre = row.Cell(1).GetValue<string>(),
-                            Apellido = row.Cell(2).GetValue<string>(),
-                            DNI = row.Cell(3).GetValue<string>(),
-                            FechaNacimiento = row.Cell(4).TryGetValue(out DateTime fechaNac) ? fechaNac : DateTime.Today,
-                            Sede = row.Cell(5).GetValue<string>(),
-                            Turno = row.Cell(6).GetValue<string>(),
-                            Grupo = row.Cell(7).GetValue<string>(),
-                            Apoderado = row.Cell(8).GetValue<string>(),
-                            Celular = row.Cell(9).GetValue<string>(),
-                            Compite = compite,
-                            TipoDeSeguro = row.Cell(11).GetValue<string>(),
-                            Categoria = row.Cell(12).GetValue<string>(),
-                            Equipo = row.Cell(13).GetValue<string>(),
-                            Mensualidad = row.Cell(14).TryGetValue(out decimal mensualidad) ? mensualidad : 0,
-                            FechaInicioMatricula = row.Cell(15).TryGetValue(out DateTime fechaMat) ? fechaMat : DateTime.Today,
-                            EstadoPago = estadoPago,
-                            FotoRuta = "" // Puedes ajustar si usas imágenes
-                        };
-
-                        alumnos.Add(alumno);
+                        ExcelHelper.ExportarAlumnosAExcel(dgvAlumnos, sfd.FileName);
+                        MessageBox.Show("Exportado correctamente a Excel.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (IOException)
+                    {
+                        MessageBox.Show("No se puede exportar. El archivo está abierto en otro programa. Ciérralo e intenta de nuevo.",
+                                         "Archivo en uso", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show("Error en una fila: " + ex.Message, "Error al importar", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        continue; // Saltar fila problemática
+                        MessageBox.Show("Ocurrió un error al exportar: " + ex.Message,
+                                         "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
             }
-
-            return alumnos;
         }
 
-
-        private void btnImportar_Click(object sender, EventArgs e)
+        private void btnImportar_Click_1(object sender, EventArgs e)
         {
             OpenFileDialog ofd = new OpenFileDialog();
             ofd.Filter = "Archivos de Excel (*.xlsx)|*.xlsx";
@@ -272,21 +202,57 @@ namespace ProyectoAcademiaFutbol
             {
                 try
                 {
-                    var alumnos = LeerAlumnosDesdeExcel(ofd.FileName);
+                    List<string> erroresImportacion;
 
-                    int count = 0;
-                    foreach (var alumno in alumnos)
+                    List<Alumno> alumnos = ExcelHelper.ImportarAlumnosDesdeExcel(ofd.FileName, out erroresImportacion);
+
+                    int countNuevos = 0;
+                    int countActualizados = 0;
+
+                    foreach (Alumno alumno in alumnos)
                     {
-                        AlumnoDAO.Insertar(alumno);
-                        count++;
+                        if (AlumnoDAO.ExistePorDNI(alumno.DNI))
+                        {
+                            AlumnoDAO.ActualizarPorDNI(alumno);
+                            countActualizados++;
+                        }
+                        else
+                        {
+                            AlumnoDAO.Insertar(alumno);
+                            countNuevos++;
+                        }
                     }
 
-                    MessageBox.Show($"Se importaron {count} alumnos correctamente.", "Importación exitosa", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    MessageBox.Show(
+                        $"Importación completada.\nNuevos: {countNuevos}\nActualizados: {countActualizados}",
+                        "Importación exitosa",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information
+                    );
+
+                    if (erroresImportacion.Count > 0)
+                    {
+                        MessageBox.Show(
+                            "Algunos alumnos no se importaron por errores:\n\n" + string.Join("\n", erroresImportacion),
+                            "Importación con Errores", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
+
                     CargarDatos();
+                }
+                catch (IOException)
+                {
+                    MessageBox.Show("El archivo está abierto en otro programa. Ciérralo e intenta de nuevo.",
+                        "Archivo en uso", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                catch (InvalidDataException idEx)
+                {
+                    MessageBox.Show(idEx.Message,
+                        "Error en los datos del archivo de Excel", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Error al importar: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Ocurrió un error al importar: " + ex.Message,
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
         }

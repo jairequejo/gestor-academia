@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Configuration;
 using System.Data.SQLite;
 using System.IO;
 
@@ -9,27 +8,31 @@ namespace ProyectoAcademiaFutbol.Datos
     {
         private static readonly string NombreDB = "academia.db";
 
+        // Ruta absoluta al archivo de la base de datos
         private static readonly string RutaDb = Path.Combine(
             AppDomain.CurrentDomain.GetData("DataDirectory")?.ToString() ?? AppDomain.CurrentDomain.BaseDirectory,
             NombreDB
         );
 
+        // Ruta pública para acceder desde otras clases
         public static string RutaCompletaBD => RutaDb;
 
+        // Cadena de conexión para SQLite
         public static string CadenaConexion =>
             $"Data Source={RutaDb};Version=3;";
 
         /// <summary>
-        /// Verifica si existe la base de datos y la crea con su tabla principal si no existe.
+        /// Crea la base de datos y la tabla de Alumnos si no existen.
         /// </summary>
         public static void VerificarCrearBD()
         {
             try
             {
+                // Crea el archivo si no existe
                 if (!File.Exists(RutaDb))
                 {
                     SQLiteConnection.CreateFile(RutaDb);
-                    Console.WriteLine("Base de datos creada: " + RutaDb);
+                    Console.WriteLine("Base de datos creada en: " + RutaDb);
                 }
 
                 using (var conn = new SQLiteConnection(CadenaConexion))
@@ -41,7 +44,7 @@ namespace ProyectoAcademiaFutbol.Datos
                         Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                         Nombre TEXT NOT NULL,
                         Apellido TEXT,
-                        Dni TEXT,
+                        Dni TEXT UNIQUE,
                         TipoSeguro TEXT,
                         FechaNacimiento TEXT NOT NULL,
                         Categoria TEXT NOT NULL,
@@ -68,6 +71,10 @@ namespace ProyectoAcademiaFutbol.Datos
             {
                 Console.WriteLine("Error al verificar o crear la base de datos: " + ex.Message);
             }
+        }
+        public static SQLiteConnection ObtenerConexion()
+        {
+            return new SQLiteConnection(CadenaConexion);
         }
     }
 }

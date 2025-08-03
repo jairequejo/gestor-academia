@@ -1,4 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Text;
 using System.Windows.Forms;
 using ProyectoAcademiaFutbol.Clases;
 using ProyectoAcademiaFutbol.Datos;
@@ -10,6 +14,8 @@ namespace ProyectoAcademiaFutbol.Formularios
         private string rutaFoto = string.Empty;
         private Alumno alumnoExistente = null;
 
+        private List<string> sedesValidas = new List<string> { "Yecilú", "Misti", "El Bosque" };
+
         public FrmAgregarAlumno()
         {
             InitializeComponent();
@@ -17,7 +23,7 @@ namespace ProyectoAcademiaFutbol.Formularios
             cbEquipo.Enabled = false;
             cbEquipo.Items.AddRange(new[] { "A", "B", "C" });
             cbCategoria.Items.AddRange(new[] { "Sub-6", "Sub-8", "Sub-10", "Sub-12", "Sub-14", "Sub-16" });
-            cbSede.Items.AddRange(new[] { "El Bosque", "Misti", "Yecilú" });
+            cbSede.Items.AddRange(sedesValidas.ToArray());
             cbTipoSeguro.Items.AddRange(new[] { "SIS", "MINSA", "Privado", "Ninguno" });
             cbTurno.Items.AddRange(new[] { "Mañana", "Tarde", "Noche" });
             cbGrupo.Items.AddRange(new[] { "Grupo 1", "Grupo 2", "Grupo 3" });
@@ -25,7 +31,6 @@ namespace ProyectoAcademiaFutbol.Formularios
             chkCompite.CheckedChanged += chkCompite_CheckedChanged;
         }
 
-        // Constructor para edición
         public FrmAgregarAlumno(Alumno alumno) : this()
         {
             alumnoExistente = alumno;
@@ -42,7 +47,7 @@ namespace ProyectoAcademiaFutbol.Formularios
             cbSede.SelectedItem = alumno.Sede;
             cbTurno.SelectedItem = alumno.Turno;
             cbGrupo.SelectedItem = alumno.Grupo;
-            cbTipoSeguro.SelectedItem = alumno.TipoDeSeguro;
+            cbTipoSeguro.SelectedItem = alumno.TipoSeguro;
             txtMensualidad.Text = alumno.Mensualidad.ToString("0.00");
             dtpInicioMatricula.Value = alumno.FechaInicioMatricula != DateTime.MinValue ? alumno.FechaInicioMatricula : DateTime.Today;
             rutaFoto = alumno.FotoRuta;
@@ -74,53 +79,27 @@ namespace ProyectoAcademiaFutbol.Formularios
 
             try
             {
+                // Obtener datos del formulario
+                Alumno datosFormulario = ObtenerDatosDesdeFormulario(alumnoExistente ?? new Alumno());
+
+                // Validar si el DNI ya existe (exceptuando si es el mismo ID que se está editando)
+                bool dniExiste = AlumnoDAO.ExisteDni(datosFormulario.DNI, alumnoExistente?.Id ?? 0);
+                if (dniExiste)
+                {
+                    MessageBox.Show("Ya existe un alumno con este DNI.", "DNI duplicado", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
                 if (alumnoExistente != null)
                 {
-                    alumnoExistente.Nombre = txtNombre.Text.Trim();
-                    alumnoExistente.Apellido = txtApellido.Text.Trim();
-                    alumnoExistente.DNI = txtDNI.Text.Trim();
-                    alumnoExistente.FechaNacimiento = dtpNacimiento.Value;
-                    alumnoExistente.Categoria = cbCategoria.Text;
-                    alumnoExistente.Compite = chkCompite.Checked;
-                    alumnoExistente.Equipo = chkCompite.Checked ? cbEquipo.Text : string.Empty;
-                    alumnoExistente.Apoderado = txtApoderado.Text.Trim();
-                    alumnoExistente.Celular = txtCelular.Text.Trim();
-                    alumnoExistente.Sede = cbSede.Text;
-                    alumnoExistente.Turno = cbTurno.Text;
-                    alumnoExistente.Grupo = cbGrupo.Text;
-                    alumnoExistente.TipoDeSeguro = cbTipoSeguro.Text;
-                    alumnoExistente.Mensualidad = decimal.Parse(txtMensualidad.Text);
-                    alumnoExistente.FechaInicioMatricula = dtpInicioMatricula.Value;
-                    alumnoExistente.EstadoPago = true;
-                    alumnoExistente.FotoRuta = rutaFoto;
-
-                    AlumnoDAO.Actualizar(alumnoExistente);
+                    // Actualizar alumno existente
+                    AlumnoDAO.Actualizar(datosFormulario);
                     MessageBox.Show("Alumno actualizado correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 else
                 {
-                    var nuevoAlumno = new Alumno
-                    {
-                        Nombre = txtNombre.Text.Trim(),
-                        Apellido = txtApellido.Text.Trim(),
-                        DNI = txtDNI.Text.Trim(),
-                        FechaNacimiento = dtpNacimiento.Value,
-                        Categoria = cbCategoria.Text,
-                        Compite = chkCompite.Checked,
-                        Equipo = chkCompite.Checked ? cbEquipo.Text : string.Empty,
-                        Apoderado = txtApoderado.Text.Trim(),
-                        Celular = txtCelular.Text.Trim(),
-                        Sede = cbSede.Text,
-                        Turno = cbTurno.Text,
-                        Grupo = cbGrupo.Text,
-                        TipoDeSeguro = cbTipoSeguro.Text,
-                        Mensualidad = decimal.Parse(txtMensualidad.Text),
-                        FechaInicioMatricula = dtpInicioMatricula.Value,
-                        EstadoPago = true,
-                        FotoRuta = rutaFoto
-                    };
-
-                    AlumnoDAO.Insertar(nuevoAlumno);
+                    // Insertar nuevo alumno
+                    AlumnoDAO.Insertar(datosFormulario);
                     MessageBox.Show("Alumno agregado correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
 
@@ -129,9 +108,32 @@ namespace ProyectoAcademiaFutbol.Formularios
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error al guardar: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Ocurrió un error: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        private Alumno ObtenerDatosDesdeFormulario(Alumno alumno)
+        {
+            alumno.Nombre = txtNombre.Text.Trim();
+            alumno.Apellido = txtApellido.Text.Trim();
+            alumno.DNI = txtDNI.Text.Trim();
+            alumno.FechaNacimiento = dtpNacimiento.Value;
+            alumno.Categoria = cbCategoria.Text.Trim();
+            alumno.Sede = cbSede.Text.Trim();
+            alumno.Equipo = cbEquipo.SelectedItem?.ToString();
+            alumno.Grupo = cbGrupo.SelectedItem?.ToString();
+            alumno.Turno = cbTurno.SelectedItem?.ToString();
+            alumno.Compite = chkCompite.Checked;
+            alumno.Apoderado = txtApoderado.Text.Trim();
+            alumno.Celular = txtCelular.Text.Trim();
+            alumno.Mensualidad = decimal.Parse(txtMensualidad.Text.Trim());
+            alumno.FechaInicioMatricula = dtpInicioMatricula.Value;
+            //alumno.EstadoPago = cbEstadoPago.SelectedItem?.ToString();
+            alumno.TipoSeguro = cbTipoSeguro.SelectedItem?.ToString();
+
+            return alumno;
+        }
+
 
         private bool ValidarFormulario()
         {
@@ -177,9 +179,9 @@ namespace ProyectoAcademiaFutbol.Formularios
                 txtCelular.Focus();
                 return false;
             }
-            if (cbSede.SelectedIndex == -1)
+            if (cbSede.SelectedIndex == -1 || !SedeEsValida(cbSede.Text))
             {
-                MessageBox.Show("Seleccione una sede.", "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Seleccione una sede válida (Yecilú, Misti, El Bosque).", "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 cbSede.Focus();
                 return false;
             }
@@ -207,7 +209,23 @@ namespace ProyectoAcademiaFutbol.Formularios
                 txtMensualidad.Focus();
                 return false;
             }
+
             return true;
+        }
+
+        private bool SedeEsValida(string sedeIngresada)
+        {
+            string normalizada = NormalizarTexto(sedeIngresada);
+            return sedesValidas.Any(s => NormalizarTexto(s) == normalizada);
+        }
+
+        private string NormalizarTexto(string texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto)) return string.Empty;
+
+            string normalized = texto.ToLower().Normalize(NormalizationForm.FormD);
+            var chars = normalized.Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark);
+            return new string(chars.ToArray()).Trim();
         }
 
         private void btnCancelar_Click(object sender, EventArgs e)
@@ -227,12 +245,10 @@ namespace ProyectoAcademiaFutbol.Formularios
 
         private void cbSede_SelectedIndexChanged(object sender, EventArgs e)
         {
-
         }
 
         private void label12_Click(object sender, EventArgs e)
         {
-
         }
     }
 }

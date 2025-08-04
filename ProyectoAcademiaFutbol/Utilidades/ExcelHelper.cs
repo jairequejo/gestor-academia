@@ -64,7 +64,6 @@ namespace ProyectoAcademiaFutbol.Utilidades
                 {
                     try
                     {
-                        // Se obtiene el DNI de la tercera columna (índice 3)
                         var dniCell = worksheet.Cells[row, 3];
 
                         if (dniCell == null || dniCell.Value == null)
@@ -99,12 +98,17 @@ namespace ProyectoAcademiaFutbol.Utilidades
                             Apoderado = worksheet.Cells[row, 8]?.Text?.Trim() ?? string.Empty,
                             Celular = worksheet.Cells[row, 9]?.Text?.Trim() ?? string.Empty,
                             Compite = InterpretarBool(worksheet.Cells[row, 10]?.Text),
-                            Categoria = worksheet.Cells[row, 11]?.Text?.Trim() ?? string.Empty,
-                            Equipo = worksheet.Cells[row, 12]?.Text?.Trim() ?? string.Empty,
-                            Mensualidad = decimal.TryParse(worksheet.Cells[row, 13]?.Text?.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal m) ? m : 0,
-                            FechaInicioMatricula = DateTime.TryParse(worksheet.Cells[row, 14]?.Text?.Trim(), out DateTime fv) ? fv : DateTime.MinValue,
-                            EstadoPago = InterpretarBool(worksheet.Cells[row, 15]?.Text),
-                            TipoSeguro = "", // No está presente en tu Excel, se deja vacío.
+
+                            // AHORA: El tipo de seguro está en la columna 11 y la categoría en la 12
+                            TipoSeguro = worksheet.Cells[row, 11]?.Text?.Trim() ?? string.Empty,
+                            Categoria = worksheet.Cells[row, 12]?.Text?.Trim() ?? string.Empty,
+
+                            // El resto de columnas se mueven una posición a la derecha
+                            Equipo = worksheet.Cells[row, 13]?.Text?.Trim() ?? string.Empty,
+                            Mensualidad = decimal.TryParse(worksheet.Cells[row, 14]?.Text?.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out decimal m) ? m : 0,
+                            FechaInicioMatricula = DateTime.TryParse(worksheet.Cells[row, 15]?.Text?.Trim(), out DateTime fv) ? fv : DateTime.MinValue,
+                            EstadoPago = InterpretarBool(worksheet.Cells[row, 16]?.Text),
+
                             FotoRuta = ""
                         };
 
